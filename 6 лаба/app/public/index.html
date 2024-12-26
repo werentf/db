@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Спортивные мероприятия</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            max-width: 1200px;
+            width: 90%;
+            margin: 20px auto;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            margin: 0 auto;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .filters {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .filters select, .filters input {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Спортивные мероприятия</h1>
+        
+        <div class="filters">
+            <select id="categoryFilter">
+                <option value="">Все категории</option>
+                <option value="Командные">Командные</option>
+                <option value="Индивидуальные">Индивидуальные</option>
+                <option value="Групповые">Групповые</option>
+            </select>
+            
+            <input type="number" id="minParticipants" placeholder="Мин. участников">
+            <input type="date" id="dateFilter">
+            <input type="text" id="sportType" placeholder="Тип спорта">
+            
+            <button onclick="applyFilters()">Применить фильтры</button>
+            <button onclick="resetFilters()">Сбросить</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Дата и время</th>
+                    <th>Вид спорта</th>
+                    <th>Тренер</th>
+                    <th>Категория</th>
+                    <th>Количество участников</th>
+                    <th>Место проведения</th>
+                </tr>
+            </thead>
+            <tbody id="eventsTable">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function formatDateTime(dateTimeStr) {
+            const date = new Date(dateTimeStr);
+            return date.toLocaleString('ru-RU');
+        }
+
+        async function loadEvents(filters = {}) {
+            try {
+                let url = '/api/events';
+                if (Object.keys(filters).length > 0) {
+                    const params = new URLSearchParams(filters);
+                    url = `/api/events/filter?${params}`;
+                }
+                
+                const response = await fetch(url);
+                const events = await response.json();
+                
+                const tbody = document.getElementById('eventsTable');
+                tbody.innerHTML = '';
+                
+                events.forEach(event => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${formatDateTime(event.date_time)}</td>
+                        <td>${event.sport_type}</td>
+                        <td>${event.coach}</td>
+                        <td>${event.category}</td>
+                        <td>${event.participants_count}</td>
+                        <td>${event.location_name}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Ошибка при загрузке данных:', error);
+            }
+        }
+
+        function applyFilters() {
+            const filters = {};
+            const category = document.getElementById('categoryFilter').value;
+            const minParticipants = document.getElementById('minParticipants').value;
+            const date = document.getElementById('dateFilter').value;
+            const sportType = document.getElementById('sportType').value;
+
+            if (category) filters.category = category;
+            if (minParticipants) filters.minParticipants = minParticipants;
+            if (date) filters.date = date;
+            if (sportType) filters.sport_type = sportType;
+
+            loadEvents(filters);
+        }
+
+        function resetFilters() {
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('minParticipants').value = '';
+            document.getElementById('dateFilter').value = '';
+            document.getElementById('sportType').value = '';
+            loadEvents();
+        }
+
+        // Загрузка данных при открытии страницы
+        loadEvents();
+    </script>
+</body>
+</html> 
